@@ -1,0 +1,32 @@
+<MRHBF_1>
+
+####################
+#  Compare Method  #
+####################
+
+<CompareMethod>{
+    <Identifier><1>
+    <LS_Similarity><0.75>
+}
+
+##############
+#  Triggers  #
+##############
+
+<Trigger>{
+    <String><repeat>
+    <Weight><100>
+    <Value><0>
+}
+
+<Trigger>{
+    <String><after>
+    <Weight><100>
+    <Value><0>
+}
+
+<Trigger>{
+    <String><me>
+    <Weight><100>
+    <Value><0>
+}

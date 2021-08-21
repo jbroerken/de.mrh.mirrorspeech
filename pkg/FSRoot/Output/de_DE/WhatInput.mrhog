@@ -1,0 +1,15 @@
+<MRHBF_1>
+
+####################
+#  Base Sentences  #
+####################
+
+<Sentence>{
+    <String><Was soll ich sagen?>
+    <Chance><0.8>
+}
+
+<Sentence>{
+    <String><Was soll ich wiederhohlen?>
+    <Chance><0.6>
+}
