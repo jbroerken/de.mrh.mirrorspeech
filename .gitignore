@@ -37,3 +37,4 @@
 ./xcode/*
 xcode/mirrorspeech/
 
+pkg/FSRoot/latest.log

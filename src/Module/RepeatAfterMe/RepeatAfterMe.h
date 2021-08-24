@@ -23,18 +23,17 @@
 #define RepeatAfterMe_h
 
 // C / C++
-#include <atomic>
 
 // External
 #include <libmrhab/Module/MRH_Module.h>
+#include <libmrhab/Module/Tools/MRH_ModuleTimer.h>
+#include <libmrhvt/String/MRH_SpeechString.h>
 
 // Project
 
 
 class RepeatAfterMe : public MRH_Module,
-                      private MRH_ModuleTimer,
-                      private MRH_ModuleInput,
-                      private MRH_ModuleOutput
+                      private MRH_ModuleTimer
 {
 public:
     
@@ -106,13 +105,11 @@ private:
     
     enum State
     {
-        SERVICE_CHECK = 0,
+        CHECK_SERVICE = 0,
         ASK_OUTPUT = 1,
-        ASK_PERFORMED = 2,
-        LISTEN_INPUT = 3,
-        REPEAT_OUTPUT = 4,
-        REPEAT_PERFORMED = 5,
-        CLOSE_APP = 6,
+        LISTEN_INPUT = 2,
+        REPEAT_OUTPUT = 3,
+        CLOSE_APP = 4,
         
         STATE_MAX = CLOSE_APP,
         
@@ -120,16 +117,42 @@ private:
     };
     
     //*************************************************************************************
-    // Setters
+    // State
     //*************************************************************************************
     
     /**
-     *  Set the current module state.
+     *  Set the current state, resetting the timer.
      *
-     *  \param e_State The new state.
+     *  \param e_State The next state to set.
      */
     
-    inline void SetState(State e_State) noexcept;
+    void StateSet(State e_State) noexcept;
+    
+    /**
+     *  Check service state.
+     */
+    
+    void StateCheckService() noexcept;
+    
+    /**
+     *  Send output created from a string.
+     *
+     *  \param s_String The string to send.
+     */
+    
+    void StateSendOutput(std::string const& s_String) noexcept;
+    
+    /**
+     *  Ask output state.
+     */
+    
+    void StateAskOutput() noexcept;
+    
+    /**
+     *  Repeat output state.
+     */
+    
+    void StateRepeatOutput() noexcept;
     
     //*************************************************************************************
     // Data
@@ -137,8 +160,11 @@ private:
     
     bool b_Endless;
     
-    std::atomic<State> e_State;
-    int i_ServiceAvail;
+    State e_State;
+    
+    int i_Service;
+    MRH_SpeechString c_Input;
+    MRH_Uint32 u32_OutputID;
     
 protected:
 

@@ -28,15 +28,12 @@
 #include "./RepeatAfterMe.h"
 
 // Pre-defined
-#ifndef SPEECH_OUTPUT_DIR
-    #define SPEECH_OUTPUT_DIR "Output"
-#endif
-#ifndef SPEECH_OUTPUT_FILE
-    #define SPEECH_OUTPUT_FILE "WhatInput.mrhog"
-#endif
-#ifndef STATE_TIMEOUT_MS
-    #define STATE_TIMEOUT_MS 30000
-#endif
+#define speech_cast event_cast<const MRH_EvSpeechString*>
+#define TIMEOUT_SERVICE_MS 5000
+#define TIMEOUT_INPUT_MS 30000
+#define TIMEOUT_OUTPUT_MS 15000
+#define SPEECH_OUTPUT_DIR "Output"
+#define SPEECH_OUTPUT_FILE "WhatInput.mrhog"
 
 
 //*************************************************************************************
@@ -44,16 +41,12 @@
 //*************************************************************************************
 
 RepeatAfterMe::RepeatAfterMe(bool b_Endless) : MRH_Module("RepeatAfterMe"),
-                                               MRH_ModuleTimer(STATE_TIMEOUT_MS),
                                                b_Endless(b_Endless),
-                                               e_State(SERVICE_CHECK),
-                                               i_ServiceAvail(0)
+                                               c_Input(0),
+                                               u32_OutputID(0),
+                                               i_Service(0)
 {
-    // Prepare service available events
-    MRH_EventStorage& c_Storage = MRH_EventStorage::Singleton();
-    
-    c_Storage.Add(MRH_L_AVAIL_U());
-    c_Storage.Add(MRH_S_AVAIL_U());
+    StateSet(CHECK_SERVICE);
 }
 
 RepeatAfterMe::~RepeatAfterMe() noexcept
@@ -65,8 +58,6 @@ RepeatAfterMe::~RepeatAfterMe() noexcept
 
 void RepeatAfterMe::HandleEvent(const MRH_EVBase* p_Event) noexcept
 {
-    // @NOTE: No locking required, only 1 callback thread in use
-    
     switch (p_Event->GetType())
     {
         // Service
@@ -76,49 +67,46 @@ void RepeatAfterMe::HandleEvent(const MRH_EVBase* p_Event) noexcept
             {
                 int i_Flag = p_Event->GetType() == MRH_EVENT_LISTEN_AVAIL_S ? 1 : 2;
                 
-                if ((i_ServiceAvail += (i_ServiceAvail & i_Flag ? 0 : i_Flag)) == 3)
+                if ((i_Service += (i_Service & i_Flag ? 0 : i_Flag)) == 3)
                 {
-                    SetState(ASK_OUTPUT);
+                    StateSet(ASK_OUTPUT);
                 }
-            }
-            else
-            {
-                i_ServiceAvail = -1;
             }
             break;
             
         // Input
         case MRH_EVENT_LISTEN_STRING_S:
-            if (e_State == LISTEN_INPUT)
+            if (speech_cast(p_Event)->GetID() != c_Input.GetID())
             {
-                try
-                {
-                    AddInput(event_cast<const MRH_L_STRING_S*>(p_Event));
-                    
-                    if (GetInputFinished() == true)
-                    {
-                        SetState(REPEAT_OUTPUT);
-                    }
-                }
-                catch (MRH_ModuleException& e)
-                {
-                    MRH_ModuleLogger::Singleton().Log("RepeatAfterMe", e.what(),
-                                                      "RepeatAfterMe.cpp", __LINE__);
-                }
+                c_Input.Reset(speech_cast(p_Event)->GetString(),
+                              speech_cast(p_Event)->GetID(),
+                              speech_cast(p_Event)->GetPart(),
+                              speech_cast(p_Event)->GetType() == MRH_EvSpeechString::END ? true : false);
+            }
+            else
+            {
+                c_Input.Add(speech_cast(p_Event)->GetString(),
+                            speech_cast(p_Event)->GetPart(),
+                            speech_cast(p_Event)->GetType() == MRH_EvSpeechString::END ? true : false);
+            }
+            
+            if (c_Input.GetState() == MRH_SpeechString::COMPLETE)
+            {
+                StateSet(REPEAT_OUTPUT);
             }
             break;
             
         // Output
         case MRH_EVENT_SAY_STRING_S:
-            if (OutputPerformed(event_cast<const MRH_S_STRING_S*>(p_Event)) == true)
+            if (speech_cast(p_Event)->GetID() == u32_OutputID)
             {
-                if (e_State == ASK_PERFORMED)
+                if (e_State == ASK_OUTPUT)
                 {
-                    SetState(LISTEN_INPUT);
+                    StateSet(LISTEN_INPUT);
                 }
-                else if (e_State == REPEAT_PERFORMED)
+                else if (e_State == REPEAT_OUTPUT)
                 {
-                    SetState(b_Endless == true ? LISTEN_INPUT : CLOSE_APP);
+                    StateSet(CLOSE_APP);
                 }
             }
             break;
@@ -130,66 +118,131 @@ void RepeatAfterMe::HandleEvent(const MRH_EVBase* p_Event) noexcept
 
 MRH_Module::Result RepeatAfterMe::Update()
 {
-    // Check timeout
-    if (GetTimerFinished() == true)
+    switch (e_State)
     {
-        throw MRH_ModuleException("RepeatAfterMe",
-                                  "Timeout for state " + std::to_string(e_State) + "!");
-    }
-    else if (i_ServiceAvail < 0)
-    {
-        throw MRH_ModuleException("RepeatAfterMe",
-                                  "Service(s) unavailable!");
+        case CHECK_SERVICE:
+            StateCheckService();
+            break;
+        case ASK_OUTPUT:
+            StateAskOutput();
+            break;
+        case LISTEN_INPUT:
+            break;
+        case REPEAT_OUTPUT:
+            StateRepeatOutput();
+            break;
+            
+        default:
+            return MRH_Module::FINISHED_POP;
+            
     }
     
-    try
-    {
-        switch (e_State)
-        {
-            // Output
-            case ASK_OUTPUT:
-                SendOutput(GetOutputStringID() + 1,
-                           MRH_OutputGenerator(SPEECH_OUTPUT_DIR, SPEECH_OUTPUT_FILE).Generate());
-                SetState(ASK_PERFORMED);
-                break;
-            case REPEAT_OUTPUT:
-                SendOutput(GetOutputStringID() + 1,
-                           BuildInput());
-                SetState(REPEAT_PERFORMED);
-                break;
-                
-            // App End
-            case CLOSE_APP:
-                return MRH_Module::FINISHED_POP;
-                
-            // Other stuff is handled in the HandleEvent() function
-            default:
-                break;
-        }
-        
-        return MRH_Module::IN_PROGRESS;
-    }
-    catch (MRH_VTException& e)
-    {
-        throw MRH_ModuleException("RepeatAfterMe",
-                                  "MRH_VTException: " + e.what2());
-    }
-    catch (MRH_ABException& e)
-    {
-        throw MRH_ModuleException("RepeatAfterMe",
-                                  "MRH_ABException: " + e.what2());
-    }
-    catch (MRH_ModuleException& e)
-    {
-        throw MRH_ModuleException("RepeatAfterMe",
-                                  "MRH_ModuleException: " + e.what2());
-    }
+    return MRH_Module::IN_PROGRESS;
 }
 
 std::shared_ptr<MRH_Module> RepeatAfterMe::NextModule()
 {
     throw MRH_ModuleException("RepeatAfterMe",
                               "No module to switch to!");
+}
+
+//*************************************************************************************
+// State
+//*************************************************************************************
+
+void RepeatAfterMe::StateSet(State e_State) noexcept
+{
+    if (e_State == CLOSE_APP && b_Endless == true)
+    {
+        this->e_State = CHECK_SERVICE;
+    }
+    else
+    {
+        this->e_State = e_State;
+    }
+    
+    ResetTimer();
+}
+
+void RepeatAfterMe::StateCheckService() noexcept
+{
+    if (GetTimerSet() == false)
+    {
+        MRH_EventStorage::Singleton().Add(MRH_L_AVAIL_U());
+        MRH_EventStorage::Singleton().Add(MRH_S_AVAIL_U());
+        
+        SetTimer(TIMEOUT_SERVICE_MS);
+    }
+    else if (i_Service == 3)
+    {
+        StateSet(ASK_OUTPUT);
+        i_Service = 0;
+    }
+    else if (GetTimerFinished() == true)
+    {
+        StateSet(CLOSE_APP);
+    }
+}
+
+void RepeatAfterMe::StateSendOutput(std::string const& s_String) noexcept
+{
+    MRH_EventStorage& c_Storage = MRH_EventStorage::Singleton();
+    
+    try
+    {
+        std::map<MRH_Uint32, std::string> m_Part(MRH_SpeechString::SplitString(s_String));
+        ++u32_OutputID;
+        
+        for (auto It = m_Part.begin(); It != m_Part.end(); ++It)
+        {
+            c_Storage.Add(MRH_S_STRING_U((It == --(m_Part.end())) ? MRH_S_STRING_U::END : MRH_S_STRING_U::UNFINISHED,
+                                         u32_OutputID,
+                                         It->first,
+                                         It->second));
+        }
+    }
+    catch (std::exception& e)
+    {
+        MRH_ModuleLogger::Singleton().Log("RepeatAfterMe", "Failed to repeat output: " +
+                                                           std::string(e.what()),
+                                          "RepeatAfterMe.cpp", __LINE__);
+    }
+}
+
+void RepeatAfterMe::StateAskOutput() noexcept
+{
+    if (GetTimerSet() == false)
+    {
+        try
+        {
+            StateSendOutput(MRH_OutputGenerator(SPEECH_OUTPUT_DIR, SPEECH_OUTPUT_FILE).Generate());
+        }
+        catch (std::exception& e)
+        {
+            MRH_ModuleLogger::Singleton().Log("RepeatAfterMe", "Failed to ask output: " +
+                                                               std::string(e.what()),
+                                              "RepeatAfterMe.cpp", __LINE__);
+        }
+        
+        SetTimer(TIMEOUT_OUTPUT_MS);
+    }
+    else if (GetTimerFinished() == true)
+    {
+        StateSet(CLOSE_APP);
+    }
+}
+
+void RepeatAfterMe::StateRepeatOutput() noexcept
+{
+    if (GetTimerSet() == false)
+    {
+        StateSendOutput(c_Input.GetString());
+        SetTimer(TIMEOUT_OUTPUT_MS);
+    }
+    else if (GetTimerFinished() == true)
+    {
+        StateSet(CLOSE_APP);
+    }
 }
 
 //*************************************************************************************
@@ -208,18 +261,5 @@ bool RepeatAfterMe::CanHandleEvent(MRH_Uint32 u32_Type) noexcept
             
         default:
             return false;
-    }
-}
-
-//*************************************************************************************
-// Setters
-//*************************************************************************************
-
-void RepeatAfterMe::SetState(State e_State) noexcept
-{
-    if (this->e_State != e_State)
-    {
-        ResetTimer(STATE_TIMEOUT_MS);
-        this->e_State = e_State;
     }
 }
