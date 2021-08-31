@@ -63,7 +63,7 @@ extern "C"
     
         try
         {
-            p_Context = new libmrhab(std::make_unique<RepeatAfterMe>(i_LaunchCommandID == 0 ? false : true),
+            p_Context = new libmrhab(std::make_unique<RepeatAfterMe>(),
                                      i_CallbackThreadCount);
             return 0;
         }

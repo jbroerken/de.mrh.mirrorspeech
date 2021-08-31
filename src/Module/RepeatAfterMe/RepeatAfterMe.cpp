@@ -40,11 +40,10 @@
 // Constructor / Destructor
 //*************************************************************************************
 
-RepeatAfterMe::RepeatAfterMe(bool b_Endless) : MRH_Module("RepeatAfterMe"),
-                                               b_Endless(b_Endless),
-                                               c_Input(0),
-                                               u32_OutputID(0),
-                                               i_Service(0)
+RepeatAfterMe::RepeatAfterMe() : MRH_Module("RepeatAfterMe"),
+                                 c_Input(0),
+                                 u32_OutputID(0),
+                                 i_Service(0)
 {
     StateSet(CHECK_SERVICE);
 }
@@ -98,7 +97,7 @@ void RepeatAfterMe::HandleEvent(const MRH_EVBase* p_Event) noexcept
             
         // Output
         case MRH_EVENT_SAY_STRING_S:
-            if (speech_cast(p_Event)->GetID() == u32_OutputID)
+            if (event_cast<const MRH_S_STRING_S*>(p_Event)->GetID() == u32_OutputID)
             {
                 if (e_State == ASK_OUTPUT)
                 {
@@ -152,15 +151,7 @@ std::shared_ptr<MRH_Module> RepeatAfterMe::NextModule()
 
 void RepeatAfterMe::StateSet(State e_State) noexcept
 {
-    if (e_State == CLOSE_APP && b_Endless == true)
-    {
-        this->e_State = CHECK_SERVICE;
-    }
-    else
-    {
-        this->e_State = e_State;
-    }
-    
+    this->e_State = e_State;
     ResetTimer();
 }
 

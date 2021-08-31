@@ -43,11 +43,9 @@ public:
     
     /**
      *  Default constructor.
-     *
-     *  \param b_Endless Wether to endlessly repeat input or not.
      */
     
-    RepeatAfterMe(bool b_Endless);
+    RepeatAfterMe();
     
     /**
      *  Default destructor.
@@ -157,8 +155,6 @@ private:
     //*************************************************************************************
     // Data
     //*************************************************************************************
-    
-    bool b_Endless;
     
     State e_State;
     
