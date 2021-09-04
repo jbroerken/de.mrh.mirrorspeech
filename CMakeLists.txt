@@ -111,7 +111,7 @@ find_library(libmrhvt NAMES mrhvt REQUIRED)
 
 target_link_libraries(MRH_App PUBLIC Threads::Threads)
 target_link_libraries(MRH_App PUBLIC mrh)
-target_link_libraries(MRH_App PUBLIC mrhab)
+target_link_libraries(MRH_App PUBLIC mrhbf)
 target_link_libraries(MRH_App PUBLIC mrhcevs)
 target_link_libraries(MRH_App PUBLIC mrhab)
 target_link_libraries(MRH_App PUBLIC mrhvt)
