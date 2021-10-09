@@ -29,9 +29,9 @@
 
 // Pre-defined
 #define speech_cast event_cast<const MRH_EvSpeechString*>
-#define TIMEOUT_SERVICE_MS 5000
-#define TIMEOUT_INPUT_MS 30000
-#define TIMEOUT_OUTPUT_MS 15000
+#define TIMEOUT_SERVICE_MS 15000
+#define TIMEOUT_INPUT_MS 60000
+#define TIMEOUT_OUTPUT_MS 30000
 #define SPEECH_OUTPUT_DIR "Output"
 #define SPEECH_OUTPUT_FILE "WhatInput.mrhog"
 
@@ -171,6 +171,8 @@ void RepeatAfterMe::StateCheckService() noexcept
     }
     else if (GetTimerFinished() == true)
     {
+        MRH_ModuleLogger::Singleton().Log("RepeatAfterMe", "Check service timeout!",
+                                          "RepeatAfterMe.cpp", __LINE__);
         StateSet(CLOSE_APP);
     }
 }
@@ -182,7 +184,7 @@ void RepeatAfterMe::StateSendOutput(std::string const& s_String) noexcept
     try
     {
         std::map<MRH_Uint32, std::string> m_Part(MRH_SpeechString::SplitString(s_String));
-        ++u32_OutputID;
+        u32_OutputID = (rand() % ((MRH_Uint32) - 1));
         
         for (auto It = m_Part.begin(); It != m_Part.end(); ++It)
         {
@@ -219,6 +221,8 @@ void RepeatAfterMe::StateAskOutput() noexcept
     }
     else if (GetTimerFinished() == true)
     {
+        MRH_ModuleLogger::Singleton().Log("RepeatAfterMe", "Ask repeat timeout!",
+                                          "RepeatAfterMe.cpp", __LINE__);
         StateSet(CLOSE_APP);
     }
 }
