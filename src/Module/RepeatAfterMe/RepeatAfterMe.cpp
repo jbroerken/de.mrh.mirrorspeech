@@ -22,6 +22,7 @@
 // C / C++
 
 // External
+#include <libmrhevdata.h>
 #include <libmrhvt/Output/MRH_OutputGenerator.h>
 
 // Project
@@ -55,38 +56,56 @@ RepeatAfterMe::~RepeatAfterMe() noexcept
 // Update
 //*************************************************************************************
 
-void RepeatAfterMe::HandleEvent(const MRH_EVBase* p_Event) noexcept
+void RepeatAfterMe::HandleEvent(const MRH_Event* p_Event) noexcept
 {
-    switch (p_Event->GetType())
+    switch (p_Event->u32_Type)
     {
         // Service
         case MRH_EVENT_LISTEN_AVAIL_S:
         case MRH_EVENT_SAY_AVAIL_S:
-            if (event_cast<const MRH_EvAvailService*>(p_Event)->GetUsable() == true)
+        {
+            struct MRH_EvD_Base_ServiceAvail_S_t c_Data;
+            
+            if (MRH_EVD_ReadEvent(&c_Data, p_Event->u32_Type, p_Event) < 0)
             {
-                int i_Flag = p_Event->GetType() == MRH_EVENT_LISTEN_AVAIL_S ? 1 : 2;
-                
-                if ((i_Service += (i_Service & i_Flag ? 0 : i_Flag)) == 3)
-                {
-                    StateSet(ASK_OUTPUT);
-                }
+                break;
+            }
+            else if (c_Data.u8_Available != MRH_EVD_BASE_RESULT_SUCCESS)
+            {
+                break;
+            }
+            
+            int i_Flag = p_Event->u32_Type == MRH_EVENT_LISTEN_AVAIL_S ? 1 : 2;
+            
+            if ((i_Service += (i_Service & i_Flag ? 0 : i_Flag)) == 3)
+            {
+                StateSet(ASK_OUTPUT);
             }
             break;
+        }
             
         // Input
         case MRH_EVENT_LISTEN_STRING_S:
-            if (speech_cast(p_Event)->GetID() != c_Input.GetID())
+        {
+           MRH_EvD_L_String_S c_Data;
+            
+            if (MRH_EVD_ReadEvent(&c_Data, p_Event->u32_Type, p_Event) < 0)
             {
-                c_Input.Reset(speech_cast(p_Event)->GetString(),
-                              speech_cast(p_Event)->GetID(),
-                              speech_cast(p_Event)->GetPart(),
-                              speech_cast(p_Event)->GetType() == MRH_EvSpeechString::END ? true : false);
+                break;
+            }
+            
+            if (c_Data.u32_ID != c_Input.GetID())
+            {
+                c_Input.Reset(c_Data.p_String,
+                              c_Data.u32_ID,
+                              c_Data.u32_Part,
+                              c_Data.u8_Type == MRH_EVD_L_STRING_END ? true : false);
             }
             else
             {
-                c_Input.Add(speech_cast(p_Event)->GetString(),
-                            speech_cast(p_Event)->GetPart(),
-                            speech_cast(p_Event)->GetType() == MRH_EvSpeechString::END ? true : false);
+                c_Input.Add(c_Data.p_String,
+                            c_Data.u32_Part,
+                            c_Data.u8_Type == MRH_EVD_L_STRING_END ? true : false);
             }
             
             if (c_Input.GetState() == MRH_SpeechString::COMPLETE)
@@ -94,24 +113,35 @@ void RepeatAfterMe::HandleEvent(const MRH_EVBase* p_Event) noexcept
                 StateSet(REPEAT_OUTPUT);
             }
             break;
+        }
             
         // Output
         case MRH_EVENT_SAY_STRING_S:
-            if (event_cast<const MRH_S_STRING_S*>(p_Event)->GetID() == u32_OutputID)
+        {
+            MRH_EvD_S_String_S c_Data;
+            
+            if (MRH_EVD_ReadEvent(&c_Data, p_Event->u32_Type, p_Event) < 0)
             {
-                if (e_State == ASK_OUTPUT)
-                {
-                    StateSet(LISTEN_INPUT);
-                }
-                else if (e_State == REPEAT_OUTPUT)
-                {
-                    StateSet(CLOSE_APP);
-                }
+                break;
+            }
+            else if (c_Data.u32_ID != u32_OutputID)
+            {
+                break;
+            }
+            
+            if (e_State == ASK_OUTPUT)
+            {
+                StateSet(LISTEN_INPUT);
+            }
+            else if (e_State == REPEAT_OUTPUT)
+            {
+                StateSet(CLOSE_APP);
             }
             break;
+        }
             
-        default:
-            break;
+        // Unk
+        default: { break; }
     }
 }
 
@@ -159,8 +189,8 @@ void RepeatAfterMe::StateCheckService() noexcept
 {
     if (GetTimerSet() == false)
     {
-        MRH_EventStorage::Singleton().Add(MRH_L_AVAIL_U());
-        MRH_EventStorage::Singleton().Add(MRH_S_AVAIL_U());
+        MRH_EventStorage::Singleton().Add(MRH_EVD_CreateEvent(MRH_EVENT_LISTEN_AVAIL_U, NULL, 0));
+        MRH_EventStorage::Singleton().Add(MRH_EVD_CreateEvent(MRH_EVENT_SAY_AVAIL_U, NULL, 0));
         
         SetTimer(TIMEOUT_SERVICE_MS);
     }
@@ -181,17 +211,34 @@ void RepeatAfterMe::StateSendOutput(std::string const& s_String) noexcept
 {
     MRH_EventStorage& c_Storage = MRH_EventStorage::Singleton();
     
+    MRH_Event* p_Event = NULL;
+    MRH_EvD_S_String_U c_Data;
+    
     try
     {
         std::map<MRH_Uint32, std::string> m_Part(MRH_SpeechString::SplitString(s_String));
         u32_OutputID = (rand() % ((MRH_Uint32) - 1));
         
+        memset((c_Data.p_String), '\0', MRH_EVD_S_STRING_BUFFER_MAX_TERMINATED);
+        
         for (auto It = m_Part.begin(); It != m_Part.end(); ++It)
         {
-            c_Storage.Add(MRH_S_STRING_U((It == --(m_Part.end())) ? MRH_S_STRING_U::END : MRH_S_STRING_U::UNFINISHED,
-                                         u32_OutputID,
-                                         It->first,
-                                         It->second));
+            strcpy((c_Data.p_String), (It->second.c_str()));
+            c_Data.u32_ID = u32_OutputID;
+            c_Data.u32_Part = It->first;
+            c_Data.u8_Type = ((It == --(m_Part.end())) ? MRH_EVD_L_STRING_END : MRH_EVD_L_STRING_UNFINISHED);
+            
+            if (p_Event == NULL && (p_Event = MRH_EVD_CreateEvent(MRH_EVENT_SAY_STRING_U, NULL, 0)) == NULL)
+            {
+                continue;
+            }
+            else if (MRH_EVD_SetEvent(p_Event, MRH_EVENT_SAY_STRING_U, &c_Data) < 0)
+            {
+                continue;
+            }
+            
+            c_Storage.Add(p_Event);
+            p_Event = NULL;
         }
     }
     catch (std::exception& e)
@@ -199,6 +246,11 @@ void RepeatAfterMe::StateSendOutput(std::string const& s_String) noexcept
         MRH_ModuleLogger::Singleton().Log("RepeatAfterMe", "Failed to repeat output: " +
                                                            std::string(e.what()),
                                           "RepeatAfterMe.cpp", __LINE__);
+    }
+    
+    if (p_Event != NULL)
+    {
+        MRH_EVD_DestroyEvent(p_Event);
     }
 }
 
