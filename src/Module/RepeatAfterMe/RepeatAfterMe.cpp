@@ -223,10 +223,20 @@ void RepeatAfterMe::StateSendOutput(std::string const& s_String) noexcept
         
         for (auto It = m_Part.begin(); It != m_Part.end(); ++It)
         {
+            if (It == --(m_Part.end()))
+            {
+                memset((c_Data.p_String), '\0', MRH_EVD_S_STRING_BUFFER_MAX_TERMINATED);
+                c_Data.u8_Type = MRH_EVD_L_STRING_END;
+            }
+            else
+            {
+                c_Data.u8_Type = MRH_EVD_L_STRING_UNFINISHED;
+            }
+            
             strcpy((c_Data.p_String), (It->second.c_str()));
+            
             c_Data.u32_ID = u32_OutputID;
             c_Data.u32_Part = It->first;
-            c_Data.u8_Type = ((It == --(m_Part.end())) ? MRH_EVD_L_STRING_END : MRH_EVD_L_STRING_UNFINISHED);
             
             if (p_Event == NULL && (p_Event = MRH_EVD_CreateEvent(MRH_EVENT_SAY_STRING_U, NULL, 0)) == NULL)
             {
