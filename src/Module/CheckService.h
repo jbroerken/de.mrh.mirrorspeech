@@ -1,5 +1,5 @@
 /**
- *  RepeatAfterMe.h
+ *  CheckService.h
  *
  *  This file is part of the MRH project.
  *  See the AUTHORS file for Copyright information.
@@ -19,21 +19,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef RepeatAfterMe_h
-#define RepeatAfterMe_h
+#ifndef CheckService_h
+#define CheckService_h
 
 // C / C++
 
 // External
 #include <libmrhab/Module/MRH_Module.h>
-#include <libmrhab/Module/Tools/MRH_ModuleTimer.h>
-#include <libmrhvt/String/MRH_SpeechString.h>
 
 // Project
 
 
-class RepeatAfterMe : public MRH_Module,
-                      private MRH_ModuleTimer
+class CheckService : public MRH_Module
 {
 public:
     
@@ -43,15 +40,17 @@ public:
     
     /**
      *  Default constructor.
+     *
+     *  \param b_ServicesAvailable The services available flag to set.
      */
     
-    RepeatAfterMe();
+    CheckService(bool& b_ServicesAvailable) noexcept;
     
     /**
      *  Default destructor.
      */
     
-    ~RepeatAfterMe() noexcept;
+    ~CheckService() noexcept;
     
     //*************************************************************************************
     // Update
@@ -98,72 +97,18 @@ public:
 private:
     
     //*************************************************************************************
-    // Types
-    //*************************************************************************************
-    
-    enum State
-    {
-        CHECK_SERVICE = 0,
-        ASK_OUTPUT = 1,
-        LISTEN_INPUT = 2,
-        REPEAT_OUTPUT = 3,
-        CLOSE_APP = 4,
-        
-        STATE_MAX = CLOSE_APP,
-        
-        STATE_COUNT = STATE_MAX + 1
-    };
-    
-    //*************************************************************************************
-    // State
-    //*************************************************************************************
-    
-    /**
-     *  Set the current state, resetting the timer.
-     *
-     *  \param e_State The next state to set.
-     */
-    
-    void StateSet(State e_State) noexcept;
-    
-    /**
-     *  Check service state.
-     */
-    
-    void StateCheckService() noexcept;
-    
-    /**
-     *  Send output created from a string.
-     *
-     *  \param s_String The string to send.
-     */
-    
-    void StateSendOutput(std::string const& s_String) noexcept;
-    
-    /**
-     *  Ask output state.
-     */
-    
-    void StateAskOutput() noexcept;
-    
-    /**
-     *  Repeat output state.
-     */
-    
-    void StateRepeatOutput() noexcept;
-    
-    //*************************************************************************************
     // Data
     //*************************************************************************************
     
-    State e_State;
+    MRH_ModuleTimer c_Timer;
     
-    int i_Service;
-    MRH_SpeechString c_Input;
-    MRH_Uint32 u32_OutputID;
+    bool& b_ServicesAvailable;
+    
+    bool b_ListenAvailable;
+    bool b_SayAvailable;
     
 protected:
 
 };
 
-#endif /* RepeatAfterMe_h */
+#endif /* CheckService_h */
