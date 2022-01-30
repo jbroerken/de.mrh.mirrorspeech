@@ -42,6 +42,8 @@ CheckService::CheckService(bool& b_ServicesAvailable) noexcept : MRH_Module("Che
                                                                  b_ListenAvailable(false),
                                                                  b_SayAvailable(false)
 {
+    b_ServicesAvailable = false;
+    
     MRH_EventStorage& c_Storage = MRH_EventStorage::Singleton();
     
     c_Storage.Add(MRH_EVD_CreateEvent(MRH_EVENT_LISTEN_AVAIL_U, NULL, 0));
