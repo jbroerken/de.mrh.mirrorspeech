@@ -64,13 +64,7 @@ set(SRC_DIR_PATH "${CMAKE_SOURCE_DIR}/src/")
 set(SRC_LIST_APP "${SRC_DIR_PATH}/Revision.h"
                  "${SRC_DIR_PATH}/Main.cpp")
                  
-set(SRC_LIST_MODULE "${SRC_DIR_PATH}/Module/CheckService.cpp"
-                    "${SRC_DIR_PATH}/Module/CheckService.h"
-                    "${SRC_DIR_PATH}/Module/SpeechOutput.cpp"
-                    "${SRC_DIR_PATH}/Module/SpeechOutput.h"
-                    "${SRC_DIR_PATH}/Module/SpeechInput.cpp"
-                    "${SRC_DIR_PATH}/Module/SpeechInput.h"
-                    "${SRC_DIR_PATH}/Module/MirrorSpeech.cpp"
+set(SRC_LIST_MODULE "${SRC_DIR_PATH}/Module/MirrorSpeech.cpp"
                     "${SRC_DIR_PATH}/Module/MirrorSpeech.h")
 
 #########################################################################

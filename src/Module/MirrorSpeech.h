@@ -101,11 +101,12 @@ private:
     enum State
     {
         START = 0,
-        CHECK_SERVICE = 1,
-        ASK_OUTPUT = 2,
-        LISTEN_INPUT = 3,
-        REPEAT_OUTPUT = 4,
-        CLOSE_APP = 5,
+        CHECK_LISTEN = 1,
+        CHECK_SAY = 2,
+        ASK_OUTPUT = 3,
+        LISTEN_INPUT = 4,
+        REPEAT_OUTPUT = 5,
+        CLOSE_APP = 6,
         
         STATE_MAX = CLOSE_APP,
         
@@ -120,7 +121,7 @@ private:
     State e_State;
 
     // Module information
-    bool b_ServicesAvailable;
+    bool b_ServiceAvailable;
     std::string s_Input;
     
 protected:

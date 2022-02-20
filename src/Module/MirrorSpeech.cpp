@@ -22,12 +22,11 @@
 // C / C++
 
 // External
+#include <libmrhab/Module/Common/MRH_CommonModule.h>
+#include <libmrhvt/Output/MRH_OutputGenerator.h>
 
 // Project
 #include "./MirrorSpeech.h"
-#include "./CheckService.h"
-#include "./SpeechOutput.h"
-#include "./SpeechInput.h"
 
 // Pre-defined
 #ifndef MIRROR_SPEECH_OUTPUT_DIR
@@ -35,6 +34,12 @@
 #endif
 #ifndef MIRROR_SPEECH_OUTPUT_FILE
     #define MIRROR_SPEECH_OUTPUT_FILE "WhatInput.mrhog"
+#endif
+#ifndef MIRROR_SPEECH_SERVICE_TIMEOUT_MS
+    #define MIRROR_SPEECH_SERVICE_TIMEOUT_MS 10 * 1000
+#endif
+#ifndef MIRROR_SPEECH_SPEECH_TIMEOUT_MS
+    #define MIRROR_SPEECH_SPEECH_TIMEOUT_MS 60 * 1000
 #endif
 
 
@@ -45,7 +50,7 @@
 MirrorSpeech::MirrorSpeech() noexcept : MRH_Module("MirrorSpeech"),
                                         e_State(START),
                                         s_Input(""),
-                                        b_ServicesAvailable(false)
+                                        b_ServiceAvailable(false)
 {}
 
 MirrorSpeech::~MirrorSpeech() noexcept
@@ -63,16 +68,17 @@ MRH_Module::Result MirrorSpeech::Update()
     switch (e_State)
     {
         case START:
-            e_State = CHECK_SERVICE;
+            e_State = CHECK_LISTEN;
             return MRH_Module::FINISHED_APPEND;
             
-        case CHECK_SERVICE:
-            if (b_ServicesAvailable == false)
+        case CHECK_LISTEN:
+        case CHECK_SAY:
+            if (b_ServiceAvailable == false)
             {
                 return MRH_Module::FINISHED_POP;
             }
             
-            e_State = ASK_OUTPUT;
+            e_State = (e_State == CHECK_SAY ? ASK_OUTPUT : CHECK_SAY);
             return MRH_Module::FINISHED_APPEND;
             
         case ASK_OUTPUT:
@@ -101,18 +107,35 @@ std::shared_ptr<MRH_Module> MirrorSpeech::NextModule()
 {
     switch (e_State)
     {
-        case CHECK_SERVICE:
-            return std::make_shared<CheckService>(b_ServicesAvailable);
+        case CHECK_LISTEN:
+            return std::make_shared<MRH_CheckServiceModule>(MRH_CheckServiceModule::LISTEN,
+                                                            MIRROR_SPEECH_SERVICE_TIMEOUT_MS,
+                                                            b_ServiceAvailable);
+        case CHECK_SAY:
+            return std::make_shared<MRH_CheckServiceModule>(MRH_CheckServiceModule::SAY,
+                                                            MIRROR_SPEECH_SERVICE_TIMEOUT_MS,
+                                                            b_ServiceAvailable);
             
         case ASK_OUTPUT:
-            return std::make_shared<SpeechOutput>(MIRROR_SPEECH_OUTPUT_DIR,
-                                                  MIRROR_SPEECH_OUTPUT_FILE);
+            try
+            {
+                return std::make_shared<MRH_SpeechOutputModule>(MRH_OutputGenerator(MIRROR_SPEECH_OUTPUT_DIR, 
+                                                                                    MIRROR_SPEECH_OUTPUT_FILE).Generate(),
+                                                                MIRROR_SPEECH_SPEECH_TIMEOUT_MS);
+            }
+            catch (MRH_VTException& e)
+            {
+                throw MRH_ModuleException("MirrorSpeech",
+                                          "Failed to generate output: " + e.what2());
+            }
             
         case LISTEN_INPUT:
-            return std::make_shared<SpeechInput>(s_Input);
+            return std::make_shared<MRH_SpeechInputModule>(s_Input,
+                                                           MIRROR_SPEECH_SPEECH_TIMEOUT_MS);
             
         case REPEAT_OUTPUT:
-            return std::make_shared<SpeechOutput>(s_Input);
+            return std::make_shared<MRH_SpeechOutputModule>(s_Input,
+                                                            MIRROR_SPEECH_SPEECH_TIMEOUT_MS);
             
         default:
             throw MRH_ModuleException("MirrorSpeech",
