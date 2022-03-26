@@ -24,6 +24,7 @@
 // External
 #include <libmrhab/Module/Common/MRH_CommonModule.h>
 #include <libmrhvt/Output/MRH_OutputGenerator.h>
+#include <libmrhvt/String/MRH_LocalisedPath.h>
 
 // Project
 #include "./MirrorSpeech.h"
@@ -119,8 +120,8 @@ std::shared_ptr<MRH_Module> MirrorSpeech::NextModule()
         case ASK_OUTPUT:
             try
             {
-                return std::make_shared<MRH_SpeechOutputModule>(MRH_OutputGenerator(MIRROR_SPEECH_OUTPUT_DIR, 
-                                                                                    MIRROR_SPEECH_OUTPUT_FILE).Generate(),
+                return std::make_shared<MRH_SpeechOutputModule>(MRH_OutputGenerator(MRH_LocalisedPath::GetPath(MIRROR_SPEECH_OUTPUT_DIR, 
+                                                                                                               MIRROR_SPEECH_OUTPUT_FILE)).Generate(),
                                                                 MIRROR_SPEECH_SPEECH_TIMEOUT_MS);
             }
             catch (MRH_VTException& e)
