@@ -1,5 +1,5 @@
 /**
- *  MirrorSpeech.h
+ *  SpeechInput.h
  *
  *  This file is part of the MRH project.
  *  See the AUTHORS file for Copyright information.
@@ -19,8 +19,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MirrorSpeech_h
-#define MirrorSpeech_h
+#ifndef SpeechInput_h
+#define SpeechInput_h
 
 // C / C++
 
@@ -30,7 +30,7 @@
 // Project
 
 
-class MirrorSpeech : public MRH_Module
+class SpeechInput : public MRH_Module
 {
 public:
     
@@ -40,15 +40,17 @@ public:
     
     /**
      *  Default constructor.
+     *
+     *  \param s_Input The input recieved by listening.
      */
     
-    MirrorSpeech() noexcept;
+    SpeechInput(std::string& s_Input) noexcept;
     
     /**
      *  Default destructor.
      */
     
-    ~MirrorSpeech() noexcept;
+    ~SpeechInput() noexcept;
     
     //*************************************************************************************
     // Update
@@ -95,35 +97,14 @@ public:
 private:
     
     //*************************************************************************************
-    // Types
-    //*************************************************************************************
-    
-    enum State
-    {
-        START = 0,
-        ASK_OUTPUT = 1,
-        LISTEN_INPUT = 2,
-        REPEAT_OUTPUT = 3,
-        CLOSE_APP = 4,
-        
-        STATE_MAX = CLOSE_APP,
-        
-        STATE_COUNT = STATE_MAX + 1
-    };
-    
-    //*************************************************************************************
     // Data
     //*************************************************************************************
     
-    // Application state
-    State e_State;
-
-    // Module information
-    bool b_ServiceAvailable;
-    std::string s_Input;
+    MRH_ModuleTimer c_Timer;
+    std::string& s_Input;
     
 protected:
-
+    
 };
 
-#endif /* MirrorSpeech_h */
+#endif /* SpeechInput_h */

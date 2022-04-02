@@ -1,5 +1,5 @@
 /**
- *  MirrorSpeech.h
+ *  SpeechOutput.h
  *
  *  This file is part of the MRH project.
  *  See the AUTHORS file for Copyright information.
@@ -19,8 +19,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MirrorSpeech_h
-#define MirrorSpeech_h
+#ifndef SpeechOutput_h
+#define SpeechOutput_h
 
 // C / C++
 
@@ -30,7 +30,7 @@
 // Project
 
 
-class MirrorSpeech : public MRH_Module
+class SpeechOutput : public MRH_Module
 {
 public:
     
@@ -39,16 +39,20 @@ public:
     //*************************************************************************************
     
     /**
-     *  Default constructor.
+     *  String constructor.
+     *
+     *  \param s_Output The string to perform as speech output.
+     *  \param u32_TimeoutMS The time in milliseconds to wait until output is performed.
+     *  \param u32_OutputID The output ID to use.
      */
     
-    MirrorSpeech() noexcept;
+    SpeechOutput(std::string s_Output);
     
     /**
      *  Default destructor.
      */
     
-    ~MirrorSpeech() noexcept;
+    ~SpeechOutput() noexcept;
     
     //*************************************************************************************
     // Update
@@ -95,35 +99,16 @@ public:
 private:
     
     //*************************************************************************************
-    // Types
-    //*************************************************************************************
-    
-    enum State
-    {
-        START = 0,
-        ASK_OUTPUT = 1,
-        LISTEN_INPUT = 2,
-        REPEAT_OUTPUT = 3,
-        CLOSE_APP = 4,
-        
-        STATE_MAX = CLOSE_APP,
-        
-        STATE_COUNT = STATE_MAX + 1
-    };
-    
-    //*************************************************************************************
     // Data
     //*************************************************************************************
     
-    // Application state
-    State e_State;
-
-    // Module information
-    bool b_ServiceAvailable;
-    std::string s_Input;
+    MRH_ModuleTimer c_Timer;
+    
+    MRH_Uint32 u32_SentOutputID;
+    MRH_Uint32 u32_RecievedOutputID;
     
 protected:
-
+    
 };
 
-#endif /* MirrorSpeech_h */
+#endif /* SpeechOutput_h */
