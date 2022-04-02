@@ -46,8 +46,7 @@
 
 MirrorSpeech::MirrorSpeech() noexcept : MRH_Module("MirrorSpeech"),
                                         e_State(START),
-                                        s_Input(""),
-                                        b_ServiceAvailable(false)
+                                        s_Input("")
 {}
 
 MirrorSpeech::~MirrorSpeech() noexcept
@@ -110,7 +109,7 @@ std::shared_ptr<MRH_Module> MirrorSpeech::NextModule()
             return std::make_shared<SpeechInput>(s_Input);
             
         case REPEAT_OUTPUT:
-            return std::make_shared<SpeechInput>(s_Input);
+            return std::make_shared<SpeechOutput>(s_Input);
             
         default:
             throw MRH_ModuleException("MirrorSpeech",

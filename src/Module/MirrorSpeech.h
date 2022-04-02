@@ -119,7 +119,6 @@ private:
     State e_State;
 
     // Module information
-    bool b_ServiceAvailable;
     std::string s_Input;
     
 protected:

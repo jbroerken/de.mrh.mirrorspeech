@@ -115,7 +115,7 @@ MRH_Module::Result SpeechOutput::Update()
 
 std::shared_ptr<MRH_Module> SpeechOutput::NextModule()
 {
-    throw MRH_ModuleException("MRH_SpeechOutputModule",
+    throw MRH_ModuleException("SpeechOutput",
                               "No module to switch to!");
 }
 
