@@ -22,7 +22,6 @@
 // C / C++
 
 // External
-#include <libmrhab/Module/Common/MRH_CommonModule.h>
 #include <libmrhvt/Output/MRH_OutputGenerator.h>
 #include <libmrhvt/String/MRH_LocalisedPath.h>
 
