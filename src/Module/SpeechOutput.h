@@ -59,9 +59,9 @@ public:
     //*************************************************************************************
     
     /**
-     *  Hand a recieved event to the module.
+     *  Hand a received event to the module.
      *
-     *  \param p_Event The recieved event.
+     *  \param p_Event The received event.
      */
     
     void HandleEvent(const MRH_Event* p_Event) noexcept override;
@@ -105,7 +105,7 @@ private:
     MRH_ModuleTimer c_Timer;
     
     MRH_Uint32 u32_SentOutputID;
-    MRH_Uint32 u32_RecievedOutputID;
+    MRH_Uint32 u32_ReceivedOutputID;
     
 protected:
     

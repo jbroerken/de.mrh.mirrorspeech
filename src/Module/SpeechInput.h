@@ -41,7 +41,7 @@ public:
     /**
      *  Default constructor.
      *
-     *  \param s_Input The input recieved by listening.
+     *  \param s_Input The input received by listening.
      */
     
     SpeechInput(std::string& s_Input) noexcept;
@@ -57,9 +57,9 @@ public:
     //*************************************************************************************
     
     /**
-     *  Hand a recieved event to the module.
+     *  Hand a received event to the module.
      *
-     *  \param p_Event The recieved event.
+     *  \param p_Event The received event.
      */
     
     void HandleEvent(const MRH_Event* p_Event) noexcept override;

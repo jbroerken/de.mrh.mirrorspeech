@@ -40,7 +40,7 @@
 SpeechOutput::SpeechOutput(std::string s_Output) : MRH_Module("SpeechOutput"),
                                                    c_Timer(SPEECH_OUTPUT_TIMEOUT_MS),
                                                    u32_SentOutputID((rand() % ((MRH_Uint32) - 1)) + 1),
-                                                   u32_RecievedOutputID(0)
+                                                   u32_ReceivedOutputID(0)
 {
     MRH_ModuleLogger::Singleton().Log("SpeechOutput", "Sending output: " +
                                                       s_Output +
@@ -96,17 +96,17 @@ void SpeechOutput::HandleEvent(const MRH_Event* p_Event) noexcept
     }
     else
     {
-        MRH_ModuleLogger::Singleton().Log("SpeechOutput", "Recieved output performed: " +
+        MRH_ModuleLogger::Singleton().Log("SpeechOutput", "Received output performed: " +
                                                           std::to_string(c_String.u32_ID),
                                           "SpeechOutput.cpp", __LINE__);
         
-        u32_RecievedOutputID = c_String.u32_ID;
+        u32_ReceivedOutputID = c_String.u32_ID;
     }
 }
 
 MRH_Module::Result SpeechOutput::Update()
 {
-    if (u32_SentOutputID == u32_RecievedOutputID || c_Timer.GetTimerFinished() == true)
+    if (u32_SentOutputID == u32_ReceivedOutputID || c_Timer.GetTimerFinished() == true)
     {
         return MRH_Module::FINISHED_POP;
     }

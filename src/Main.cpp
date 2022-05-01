@@ -83,10 +83,10 @@ extern "C"
     }
 
     //*************************************************************************************
-    // Recieve Event
+    // Receive Event
     //*************************************************************************************
 
-    void MRH_RecieveEvent(const MRH_Event* p_Event)
+    void MRH_ReceiveEvent(const MRH_Event* p_Event)
     {
         try
         {
@@ -94,7 +94,7 @@ extern "C"
         }
         catch (MRH_ABException& e)
         {
-            MRH_ModuleLogger::Singleton().Log("MRH_RecieveEvent", "Failed to add event job: " +
+            MRH_ModuleLogger::Singleton().Log("MRH_ReceiveEvent", "Failed to add event job: " +
                                                                   e.what2(),
                                               "Main.cpp", __LINE__);
         }
